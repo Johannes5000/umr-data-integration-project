@@ -2,7 +2,7 @@ import psycopg2
 from config import config
 import import_rewe as rewe
 
-rewe_json_filepath = "0_datasets\\rewe.json"
+REWE_JSON_FILEPATH = "0_datasets\\rewe.json"
 
 def connect():
     conn = None
@@ -14,7 +14,7 @@ def connect():
         cur.executemany("""
                 INSERT INTO products (id, productName, brand, currentRetailPrice, currency, grammage, basePrice, baseUnit) 
                 values (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, rewe.get_all_sql_tuples(rewe_json_filepath))
+            """, rewe.get_all_sql_tuples(REWE_JSON_FILEPATH))
 
         # Rewe Basiseinheiten hinzufügen
         cur.executemany("""

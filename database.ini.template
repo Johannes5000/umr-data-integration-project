@@ -1,0 +1,5 @@
+[postgresql]
+host=HOSTADRESSE
+database=DATENBANK_NAME
+user=NUTZERNAME
+password=PASSWORT
