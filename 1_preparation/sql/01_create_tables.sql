@@ -1,15 +1,17 @@
 create table products (
 	id int primary key,
-	productName text,
+	product_name text,
 	brand text,
-	currentRetailPrice numeric not null,
+	current_retail_price numeric not null,
 	currency text not null,
-	grammage text,
-	basePrice numeric,
-	baseUnit text
+	number_of_items int not null,
+	amount numeric,
+	unit text,
+	base_price numeric,
+	base_unit text
 );
 
 create table base_units (
-    baseUnit text primary key,
+    base_unit text primary key,
     amount int not null
 );

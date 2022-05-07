@@ -12,13 +12,13 @@ def connect():
 
         # Rewe Produkte hinzufügen   
         cur.executemany("""
-                INSERT INTO products (id, productName, brand, currentRetailPrice, currency, grammage, basePrice, baseUnit) 
-                values (%s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO products (id, product_name, brand, current_retail_price, currency, number_of_items, amount, unit, base_price, base_unit) 
+                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, rewe.get_all_sql_tuples(REWE_JSON_FILEPATH))
 
         # Rewe Basiseinheiten hinzufügen
         cur.executemany("""
-                INSERT INTO base_units (baseUnit, amount) 
+                INSERT INTO base_units (base_unit, amount) 
                 values (%s, %s)
             """, rewe.get_base_units_as_tuples())
 
