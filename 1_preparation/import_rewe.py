@@ -32,6 +32,12 @@ def get_base_units():
         {"baseUnit" : "ML", "amount" : 100}
     ]
 
+def __unit_to_tuple(entry):
+    return (entry["baseUnit"], entry["amount"])
+
+def get_base_units_as_tuples():
+    return map(__unit_to_tuple, get_base_units())
+
 def __get_sql_tuple(entry):
     x = __parse_entry(entry)
     t = (
