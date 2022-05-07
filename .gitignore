@@ -1,2 +1,4 @@
 0_datasets/*
 !0_datasets/.gitkeep
+database.ini
+__pycache__
