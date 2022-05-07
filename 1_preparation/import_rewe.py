@@ -64,19 +64,3 @@ def __get_sql_tuple(entry):
 def get_all_sql_tuples(filepath):
     data = __load_file(filepath)
     return map(__get_sql_tuple, data)
-
-# Base units of Rewe products
-def get_base_units():
-    return [
-        {"base_unit" : "G", "amount" : 100},
-        {"base_unit" : "KG", "amount" : 1},
-        {"base_unit" : "L", "amount" : 1},
-        {"base_unit" : "ML", "amount" : 100},
-        {"base_unit" : "M", "amount" : 1} # meter
-    ]
-
-def __unit_to_tuple(entry):
-    return (entry["base_unit"], entry["amount"])
-
-def get_base_units_as_tuples():
-    return map(__unit_to_tuple, get_base_units())

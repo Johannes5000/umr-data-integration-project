@@ -10,8 +10,3 @@ create table products (
 	base_price numeric,
 	base_unit text
 );
-
-create table base_units (
-    base_unit text primary key,
-    amount int not null
-);

@@ -16,12 +16,6 @@ def connect():
                 values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, rewe.get_all_sql_tuples(REWE_JSON_FILEPATH))
 
-        # Rewe Basiseinheiten hinzufügen
-        cur.executemany("""
-                INSERT INTO base_units (base_unit, amount) 
-                values (%s, %s)
-            """, rewe.get_base_units_as_tuples())
-
         cur.close()
         conn.commit()
     except (Exception, psycopg2.DatabaseError) as error:
