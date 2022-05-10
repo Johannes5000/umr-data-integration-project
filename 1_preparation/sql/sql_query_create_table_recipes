@@ -1,0 +1,14 @@
+drop table if exists recipes cascade;
+drop table if exists ingredients cascade;
+
+create table recipes (
+	id bigserial primary key,
+	recipe_name varchar(500), 
+	category varchar(500)
+);
+
+create table ingredients (
+	recipe_id Bigint references recipes(id),
+	ingredient_name varchar(500),
+	amount varchar(500)
+);

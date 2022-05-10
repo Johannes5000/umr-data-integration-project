@@ -1,8 +1,10 @@
 import psycopg2
 from config import config
 import import_rewe as rewe
+import import_chefkoch as chefkoch
 
 REWE_JSON_FILEPATH = "0_datasets\\rewe.json"
+CHEFKOCH_JSON_FILEPATH = "0_datasets\Hauptspeise\Dessert.json"
 
 def connect():
     conn = None
@@ -10,11 +12,19 @@ def connect():
         conn = psycopg2.connect(**config())
         cur = conn.cursor()
 
-        # Rewe Produkte hinzufügen   
+        # Rewe Produkte hinzufügen
+        # cur.executemany("""
+        #         INSERT INTO products (id, product_name, brand, current_retail_price, currency, number_of_items, amount, unit, base_price, base_unit) 
+        #         values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        #     """, rewe.get_all_sql_tuples(REWE_JSON_FILEPATH))
+
+        # add chefkoch recipes
         cur.executemany("""
-                INSERT INTO products (id, product_name, brand, current_retail_price, currency, number_of_items, amount, unit, base_price, base_unit) 
-                values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, rewe.get_all_sql_tuples(REWE_JSON_FILEPATH))
+                INSERT INTO recipes (recipe_name, category)
+                values (%s, %s);
+                INSERT INTO ingredients (recipe_id, ingredient_name, amount)
+                values ((SELECT MAX(id) FROM recipes), %s, %s)
+            """, chefkoch.get_all_sql_tuples(CHEFKOCH_JSON_FILEPATH))
 
         cur.close()
         conn.commit()
