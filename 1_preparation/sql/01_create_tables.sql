@@ -17,13 +17,13 @@ create table products (
 
 create table recipes (
 	recipe_id Bigint primary key,
-	recipe_name text, 
+	recipe_name text not null, 
 	category text
 );
 
 create table ingredients (
 	recipe_id Bigint references recipes(recipe_id),
-	ingredient_name text,
+	ingredient_name text not null,
 	amount text,
 	unit text
 );
