@@ -1,3 +1,7 @@
+drop table if exists recipes cascade;
+drop table if exists ingredients cascade;
+drop table if exists products cascade;
+
 create table products (
 	id int primary key,
 	product_name text,
@@ -9,4 +13,17 @@ create table products (
 	unit text,
 	base_price numeric,
 	base_unit text
+);
+
+create table recipes (
+	recipe_id Bigint primary key,
+	recipe_name text, 
+	category text
+);
+
+create table ingredients (
+	recipe_id Bigint references recipes(recipe_id),
+	ingredient_name text,
+	amount text,
+	unit text
 );
