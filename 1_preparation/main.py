@@ -6,6 +6,9 @@ import import_chefkoch as chefkoch
 REWE_JSON_FILEPATH = "0_datasets\\rewe.json"
 CHEFKOCH_JSON_FILEPATH = "0_datasets\\Hauptspeise\\Dessert.json"
 
+SQL_CREATE_TABLES_FILEPATH = '1_preparation\\sql\\01_create_tables.sql'
+
+
 def get_file_content_as_string(filepath):
     with open(filepath, 'r', encoding='utf-8') as file:
         return file.read().replace('\n', ' ')
@@ -17,7 +20,7 @@ def connect():
         cur = conn.cursor()
 
         # Tabellen erstellen
-        cur.execute(get_file_content_as_string('1_preparation\\sql\\01_create_tables.sql'))
+        cur.execute(get_file_content_as_string(SQL_CREATE_TABLES_FILEPATH))
 
         # Rewe Produkte hinzufügen
         cur.executemany("""
