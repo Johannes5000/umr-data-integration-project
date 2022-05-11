@@ -24,6 +24,8 @@ create table recipes (
 create table ingredients (
 	recipe_id Bigint references recipes(recipe_id),
 	ingredient_name text not null,
-	amount text,
-	unit text
+	amount numeric,
+	unit text,
+	comment text,
+	constraint pk primary key (recipe_id, ingredient_name)
 );
