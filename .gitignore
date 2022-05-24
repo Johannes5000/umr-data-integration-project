@@ -2,3 +2,4 @@
 !0_datasets/.gitkeep
 database.ini
 __pycache__
+2_integration/ingredients_products_mapping.json
