@@ -6,6 +6,6 @@ create table ingredients_with_rewe_products (
     product_name text,
     product_unit text,
     similarity numeric,
-    first_token_similarity numeric,
-    constraint pk2 primary key (ingredient_name, ingredient_unit, product_name)
+    first_token_similarity numeric
+    
 );

@@ -12,3 +12,13 @@ pieces = ["kl. Stück(e)","Stück(e)","Stück","gr. Stück(e)","großer","große
 NotEnough = ["Prisen","Prise","Prise(n)","TL","EL","Körner","n. B.","kl. Scheibe(n)","gr. Scheibe(n)","Scheibe/n","evtl.","viel","etwas","wenig","einige","Handvoll","Spritzer",
 "Msp.","Streifen","Zweig/e","einige Stiele","Blätter","Stiele","Wurzel/n","Halm(e)","Stiel/e","Stängel","Topf","Tablette(n)",
 "Tropfen"] #Geringe Mengen und wenige Datenbankeinträge
+
+def is_same_group(first, second):
+    return (
+        first is None or second is None
+        or first in NotEnough or second in NotEnough
+        or (first in liquids and second in liquids)
+        or (first in mass and second in mass)
+        or (first in pieces and second in pieces)
+        or first in length or second in length
+    )

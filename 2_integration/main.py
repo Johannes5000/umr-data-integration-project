@@ -6,10 +6,12 @@ import py_stringmatching as sm
 from queue import PriorityQueue
 import time
 from postgres_to_json import *
+from model import *
 
 # Setzte diesen Wert auf True, falls keine Postgres Anbindung besteht, 
 # dann werden die angegebenen JSON Dateien aus postgres_to_json.py benutzt
 USE_JSON_FILES_INSTEAD_OF_POSTGRES = False
+COMPARE_UNITS = True
 
 def connect():
     return psycopg2.connect(**config())
@@ -68,6 +70,10 @@ def get_best_matching_products_with_first_token(ingredient, products, monge_elka
     ingredient_first_token = ingredient_tokens[0]
 
     for p in products:
+        if COMPARE_UNITS:
+            if not is_same_group(p["product_unit"], ingredient["ingredient_unit"]):
+                continue
+
         product_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', p["product_name"])
         first_token_similarity = monge_elkan.get_raw_score([ingredient_first_token], product_tokens)
 
