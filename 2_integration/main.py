@@ -1,13 +1,15 @@
 import re
 import json
 import psycopg2
-from config import config
+from config import *
 import py_stringmatching as sm
 from queue import PriorityQueue
 import time
+from postgres_to_json import *
 
-SQL_CREATE_TABLES_FILEPATH = '2_integration\\sql\\01_create_tables.sql'
-INGREDIENTS_PRODUCTS_MAPPING_FILEPATH = '2_integration\\ingredients_products_mapping.json'
+# Setzte diesen Wert auf True, falls keine Postgres Anbindung besteht, 
+# dann werden die angegebenen JSON Dateien aus postgres_to_json.py benutzt
+USE_JSON_FILES_INSTEAD_OF_POSTGRES = True
 
 def connect():
     return psycopg2.connect(**config())
@@ -35,14 +37,14 @@ def create_tables(cur):
     print('FINISHED')
 
 # Liest aus der Datenbank alle Ingredients aus
-def get_ingredients_array(cur):
+def get_ingredients_array_from_postgres(cur):
     cur.execute("select distinct ingredient_name, unit from ingredients limit 10;")
     ingredients = cur.fetchall()
     # print(ingredients)
     return ingredients
 
 # Liest aus der Datenbank alle Produkte aus
-def get_products_array(cur):
+def get_products_array_from_postgres(cur):
     cur.execute("select distinct product_name, unit from products order by product_name;")
     products = cur.fetchall()
     # print(products)
@@ -100,9 +102,39 @@ def get_best_matching_product(ingredient, products, monge_elkan):
             best_product = p
     return best_product
 
-def write_matched_ingredients_to_file(cur):
-    ingredients = get_ingredients_array(cur)
-    products = get_products_array(cur)
+def __match_ingredient(ingredient, products, me):
+    print("Mapping ingredient " + ingredient[0] + " ...", end = ' ', flush=True)
+
+    x = {}
+    product_candidates = get_best_matching_products_with_first_token(ingredient, products, me, 10, 0.05)
+    matching_product = get_best_matching_product(ingredient, product_candidates, me)
+
+    x["ingredient_name"] = ingredient[0]
+    x["product_name"] = matching_product[0]
+
+    return x
+
+def write_matched_ingredients_to_file(ingredients, products):
+    me = sm.MongeElkan()
+
+    length = len(ingredients)
+    current = 1
+
+    __write_data_to_file("[")
+    for i in ingredients:
+        print("Mapping ingredient " + i[0] + " ...", end = ' ', flush=True)
+
+        x = __match_ingredient(i, products, me)
+
+        if current != 1:
+            __append_data_to_file(",")
+        __append_json_to_file(x)
+
+        print("FINISHED " + str(round(100 * (current / length), 2)) + "%")
+        current += 1
+    __append_data_to_file("]")
+
+def write_matched_ingredients_to_postgres(ingredients, products, cur):
     me = sm.MongeElkan()
 
     length = len(ingredients)
@@ -111,51 +143,54 @@ def write_matched_ingredients_to_file(cur):
     for i in ingredients:
         print("Mapping ingredient " + i[0] + " ...", end = ' ', flush=True)
 
-        x = {}
-        product_candidates = get_best_matching_products_with_first_token(i, products, me, 10, 0.05)
-        matching_product = get_best_matching_product(i, product_candidates, me)
+        x = __match_ingredient(i, products, me)
 
-        x["ingredient_name"] = i[0]
-        x["product_name"] = matching_product[0]
-
-        if current != 1:
-            __append_data_to_file(",")
-        __append_json_to_file(x)
-        # write_ingredient_with_product_in_database(cur, (
-        #     i[0],
-        #     matching_product[0]
-        # ))
+        write_ingredient_with_product_in_database(cur, (
+            x["ingredient_name"],
+            x["product_name"]
+        ))
 
         print("FINISHED " + str(round(100 * (current / length), 2)) + "%")
         current += 1
 
 
 if __name__ == '__main__':
+    ingredients = None
+    products = None
     conn = None
     cur = None
-    try:
-        conn =  connect()
-        cur = conn.cursor()
 
-        create_tables(cur)
+    if USE_JSON_FILES_INSTEAD_OF_POSTGRES:
+        ingredients = read_ingredient_names_from_json_file()
+        products = read_product_names_from_json_file()
 
         start = time.time()
-        __write_data_to_file("[")
-
-        write_matched_ingredients_to_file(cur)
-
-        __append_data_to_file("]")
+        write_matched_ingredients_to_file(ingredients, products)
         end = time.time()
         total_time = end - start
         print("\n"+ str(round(total_time,2)))
+    else:
+        try:
+            conn =  connect()
+            cur = conn.cursor()
 
-    except (psycopg2.DatabaseError) as error:
-        print('Database Exception: ' + str(error))
-    except (Exception) as error:
-        print(error)
-    finally:
-        if conn is not None:
-            if cur is not None:
-                cur.close()
-                conn.commit()
-            conn.close()
+            create_tables(cur)
+
+            ingredients = get_ingredients_array_from_postgres(cur)
+            products = get_products_array_from_postgres(cur)
+
+            start = time.time()
+            write_matched_ingredients_to_postgres(ingredients, products, cur)
+            end = time.time()
+            total_time = end - start
+            print("\n"+ str(round(total_time,2)))
+        except (psycopg2.DatabaseError) as error:
+            print('Database Exception: ' + str(error))
+        except (Exception) as error:
+            print(error)
+        finally:
+            if conn is not None:
+                if cur is not None:
+                    cur.close()
+                    conn.commit()
+                conn.close()

@@ -1,5 +1,11 @@
 from configparser import ConfigParser
 
+SQL_CREATE_TABLES_FILEPATH = '2_integration\\sql\\01_create_tables.sql'
+INGREDIENTS_PRODUCTS_MAPPING_FILEPATH = '2_integration\\ingredients_products_mapping.json'
+
+INGREDIENT_NAMES_FILEPATH = '2_integration\\ingredient_names.json'
+PRODUCT_NAMES_FILEPATH = '2_integration\\product_names.json'
+
 
 def config(filename='database.ini', section='postgresql'):
     # create a parser

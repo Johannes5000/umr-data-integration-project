@@ -3,3 +3,5 @@
 database.ini
 __pycache__
 2_integration/ingredients_products_mapping.json
+2_integration/product_names.json
+2_integration/ingredient_names.json
