@@ -63,12 +63,10 @@ def __load_file(path : str):
         return data
 
 def read_ingredient_names_from_json_file():
-    json_array = __load_file(INGREDIENT_NAMES_FILEPATH)
-    return list(map(lambda ingredient: (ingredient["ingredient_name"], ingredient["ingredient_unit"]), json_array))
+    return __load_file(INGREDIENT_NAMES_FILEPATH)
 
 def read_product_names_from_json_file():
-    json_array = __load_file(PRODUCT_NAMES_FILEPATH)
-    return list(map(lambda ingredient: (ingredient["product_name"], ingredient["product_unit"]), json_array))
+    return __load_file(PRODUCT_NAMES_FILEPATH)
 
 if __name__ == '__main__':
     conn = None

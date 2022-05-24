@@ -27,13 +27,12 @@ def __load_file(path : str):
 
 def read_ingredient_mappings_from_file_and_insert_to_postgres(cur):
     json_array = __load_file(INGREDIENTS_PRODUCTS_MAPPING_FILEPATH)
-    json_array = list(map(lambda ingredient: (ingredient["ingredient_name"], ingredient["product_name"]), json_array))
 
     print('Inserting ' + str(len(json_array)) + ' mappings into PostgreSQL ...', end = ' ', flush=True)
-    cur.executemany(""" 
-                    INSERT INTO ingredients_with_rewe_products (ingredient_name, product_name)
-                    values (%s, %s);
-                """, json_array)
+    cur.executemany(""" INSERT INTO ingredients_with_rewe_products 
+                        (ingredient_name, ingredient_unit, product_name, product_unit, similarity, first_token_similarity) values 
+                        (%(ingredient_name)s, %(ingredient_unit)s, %(product_name)s, %(product_unit)s, %(similarity)s, %(first_token_similarity)s);
+                    """, json_array)
     print('FINISHED')
 
 

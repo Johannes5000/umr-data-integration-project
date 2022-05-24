@@ -9,7 +9,7 @@ from postgres_to_json import *
 
 # Setzte diesen Wert auf True, falls keine Postgres Anbindung besteht, 
 # dann werden die angegebenen JSON Dateien aus postgres_to_json.py benutzt
-USE_JSON_FILES_INSTEAD_OF_POSTGRES = True
+USE_JSON_FILES_INSTEAD_OF_POSTGRES = False
 
 def connect():
     return psycopg2.connect(**config())
@@ -40,20 +40,19 @@ def create_tables(cur):
 def get_ingredients_array_from_postgres(cur):
     cur.execute("select distinct ingredient_name, unit from ingredients limit 10;")
     ingredients = cur.fetchall()
-    # print(ingredients)
-    return ingredients
+    return list(map(lambda ingredient: {"ingredient_name" : ingredient[0], "ingredient_unit" : ingredient[1]}, ingredients))
 
 # Liest aus der Datenbank alle Produkte aus
 def get_products_array_from_postgres(cur):
     cur.execute("select distinct product_name, unit from products order by product_name;")
     products = cur.fetchall()
-    # print(products)
-    return products
+    return list(map(lambda product: {"product_name" : product[0], "product_unit" : product[1]}, products))
 
-def write_ingredient_with_product_in_database(cur, tuple):
-    cur.execute(""" INSERT INTO ingredients_with_rewe_products (ingredient_name, product_name)
-                    values (%s, %s);
-                """, tuple)
+def write_ingredient_with_product_in_database(cur, entry_object):
+    cur.execute(""" INSERT INTO ingredients_with_rewe_products 
+                    (ingredient_name, ingredient_unit, product_name, product_unit, similarity, first_token_similarity) values 
+                    (%(ingredient_name)s, %(ingredient_unit)s, %(product_name)s, %(product_unit)s, %(similarity)s, %(first_token_similarity)s);
+                """, entry_object)
 
 # Gibt ein Array von Produkten zurück, die dem ersten Token der Zutat am ähnlichsten sind.
 # Unter diesen Produkten kann man dann nochmal mit allen Tokens nach dem besten suchen.
@@ -65,52 +64,54 @@ def get_best_matching_products_with_first_token(ingredient, products, monge_elka
     q = PriorityQueue(max_size + 1) 
     # +1 weil wir ja immer eins hinzufügen und dann ein Platz nicht aussagekräftig ist
 
-    ingredient_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', ingredient[0])
+    ingredient_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', ingredient["ingredient_name"])
     ingredient_first_token = ingredient_tokens[0]
 
     for p in products:
-        product_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', p[0])
-        res = monge_elkan.get_raw_score([ingredient_first_token], product_tokens)
+        product_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', p["product_name"])
+        first_token_similarity = monge_elkan.get_raw_score([ingredient_first_token], product_tokens)
 
         if q.full():
             q.get() # entferne das Produkt mit der niedrigsten Ähnlichkeit
-        q.put((res, p))
+        q.put((first_token_similarity, p["product_name"], p["product_unit"]))
 
-        if (res >= best_sim_value):
-            best_sim_value = res
+        if (first_token_similarity >= best_sim_value):
+            best_sim_value = first_token_similarity
     
     q.get() # niedrigstes Entfernen, da immer hinzugefügt wurde --> nicht repräsentativ
     required_similarity = best_sim_value * (1 - delta)
     while not q.empty():
         next_item = q.get()
         if next_item[0] > required_similarity: 
-            best_products.insert(0, next_item[1])
-
+            best_products.insert(0, {"product_name" : next_item[1], "product_unit" : next_item[2], "first_token_similarity" : next_item[0]})
     return best_products
 
 
 def get_best_matching_product(ingredient, products, monge_elkan):
     best_sim = 0
     best_product = None
-    ingredient_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', ingredient[0])
+    ingredient_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', ingredient["ingredient_name"])
 
     for p in products:
-        product_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', p[0])
+        product_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', p["product_name"])
         res = monge_elkan.get_raw_score(ingredient_tokens, product_tokens)
+        p["similarity"] = res
         if (res >= best_sim):
             best_sim = res
             best_product = p
     return best_product
 
 def __match_ingredient(ingredient, products, me):
-    print("Mapping ingredient " + ingredient[0] + " ...", end = ' ', flush=True)
-
     x = {}
     product_candidates = get_best_matching_products_with_first_token(ingredient, products, me, 10, 0.05)
     matching_product = get_best_matching_product(ingredient, product_candidates, me)
 
-    x["ingredient_name"] = ingredient[0]
-    x["product_name"] = matching_product[0]
+    x["ingredient_name"] = ingredient["ingredient_name"]
+    x["ingredient_unit"] = ingredient["ingredient_unit"]
+    x["product_name"] = matching_product["product_name"]
+    x["product_unit"] = matching_product["product_unit"]
+    x["similarity"] = matching_product["similarity"]
+    x["first_token_similarity"] = matching_product["first_token_similarity"]
 
     return x
 
@@ -122,7 +123,7 @@ def write_matched_ingredients_to_file(ingredients, products):
 
     __write_data_to_file("[")
     for i in ingredients:
-        print("Mapping ingredient " + i[0] + " ...", end = ' ', flush=True)
+        print("Mapping ingredient " + i["ingredient_name"] + " ...", end = ' ', flush=True)
 
         x = __match_ingredient(i, products, me)
 
@@ -141,14 +142,11 @@ def write_matched_ingredients_to_postgres(ingredients, products, cur):
     current = 1
 
     for i in ingredients:
-        print("Mapping ingredient " + i[0] + " ...", end = ' ', flush=True)
+        print("Mapping ingredient " + i["ingredient_name"] + " ...", end = ' ', flush=True)
 
         x = __match_ingredient(i, products, me)
 
-        write_ingredient_with_product_in_database(cur, (
-            x["ingredient_name"],
-            x["product_name"]
-        ))
+        write_ingredient_with_product_in_database(cur, x)
 
         print("FINISHED " + str(round(100 * (current / length), 2)) + "%")
         current += 1
