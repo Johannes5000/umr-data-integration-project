@@ -52,8 +52,8 @@ def get_products_array_from_postgres(cur):
 
 def write_ingredient_with_product_in_database(cur, entry_object):
     cur.execute(""" INSERT INTO ingredients_with_rewe_products 
-                    (ingredient_name, ingredient_unit, product_name, product_unit, similarity, first_token_similarity) values 
-                    (%(ingredient_name)s, %(ingredient_unit)s, %(product_name)s, %(product_unit)s, %(similarity)s, %(first_token_similarity)s);
+                    (ingredient_name, ingredient_cleaned_name, ingredient_unit, product_name, product_cleaned_name, product_unit, similarity, first_token_similarity) values 
+                    (%(ingredient_name)s, %(ingredient_cleaned_name)s, %(ingredient_unit)s, %(product_name)s, %(product_cleaned_name)s, %(product_unit)s, %(similarity)s, %(first_token_similarity)s);
                 """, entry_object)
 
 # Gibt ein Array von Produkten zurück, die dem ersten Token der Zutat am ähnlichsten sind.
@@ -66,7 +66,8 @@ def get_best_matching_products_with_first_token(ingredient, products, monge_elka
     q = PriorityQueue(max_size + 1) 
     # +1 weil wir ja immer eins hinzufügen und dann ein Platz nicht aussagekräftig ist
 
-    ingredient_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', ingredient["ingredient_name"])
+    ingredient_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', ingredient["cleaned_name"])
+    ingredient_tokens = list(filter(lambda token: token, ingredient_tokens))
     ingredient_first_token = ingredient_tokens[0]
 
     for p in products:
@@ -74,12 +75,13 @@ def get_best_matching_products_with_first_token(ingredient, products, monge_elka
             if not is_same_group(p["product_unit"], ingredient["ingredient_unit"]):
                 continue
 
-        product_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', p["product_name"])
+        product_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', p["cleaned_name"])
+        product_tokens = list(filter(lambda token: token, product_tokens))
         first_token_similarity = monge_elkan.get_raw_score([ingredient_first_token], product_tokens)
 
         if q.full():
             q.get() # entferne das Produkt mit der niedrigsten Ähnlichkeit
-        q.put((first_token_similarity, p["product_name"], p["product_unit"]))
+        q.put((first_token_similarity, p["product_name"], p["product_unit"], p["cleaned_name"]))
 
         if (first_token_similarity >= best_sim_value):
             best_sim_value = first_token_similarity
@@ -89,17 +91,20 @@ def get_best_matching_products_with_first_token(ingredient, products, monge_elka
     while not q.empty():
         next_item = q.get()
         if next_item[0] > required_similarity: 
-            best_products.insert(0, {"product_name" : next_item[1], "product_unit" : next_item[2], "first_token_similarity" : next_item[0]})
+            best_products.insert(0, {"product_name" : next_item[1], "product_unit" : next_item[2], "cleaned_name" : next_item[3], "first_token_similarity" : next_item[0]})
     return best_products
 
 
 def get_best_matching_product(ingredient, products, monge_elkan):
     best_sim = 0
     best_product = None
-    ingredient_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', ingredient["ingredient_name"])
+    ingredient_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', ingredient["cleaned_name"])
+    ingredient_tokens = list(filter(lambda token: token, ingredient_tokens))
+    # print(ingredient["ingredient_name"] + " | " + str(ingredient_tokens))
 
     for p in products:
-        product_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', p["product_name"])
+        product_tokens = re.split(r'[\s\(\)\!\-\_\.\,]', p["cleaned_name"])
+        product_tokens = list(filter(lambda token: token, product_tokens))
         res = monge_elkan.get_raw_score(ingredient_tokens, product_tokens)
         p["similarity"] = res
         if (res >= best_sim):
@@ -113,8 +118,10 @@ def __match_ingredient(ingredient, products, me):
     matching_product = get_best_matching_product(ingredient, product_candidates, me)
 
     x["ingredient_name"] = ingredient["ingredient_name"]
+    x["ingredient_cleaned_name"] = ingredient["cleaned_name"]
     x["ingredient_unit"] = ingredient["ingredient_unit"]
     x["product_name"] = matching_product["product_name"]
+    x["product_cleaned_name"] = matching_product["cleaned_name"]
     x["product_unit"] = matching_product["product_unit"]
     x["similarity"] = matching_product["similarity"]
     x["first_token_similarity"] = matching_product["first_token_similarity"]
@@ -129,7 +136,7 @@ def write_matched_ingredients_to_file(ingredients, products):
 
     __write_data_to_file("[")
     for i in ingredients:
-        print("Mapping ingredient " + i["ingredient_name"] + " ...", end = ' ', flush=True)
+        print("Mapping ingredient " + i["ingredient_name"] + " (cleanded: " + i["cleaned_name"] + ") ...", end = ' ', flush=True)
 
         x = __match_ingredient(i, products, me)
 
@@ -148,7 +155,7 @@ def write_matched_ingredients_to_postgres(ingredients, products, cur):
     current = 1
 
     for i in ingredients:
-        print("Mapping ingredient " + i["ingredient_name"] + " ...", end = ' ', flush=True)
+        print("Mapping ingredient " + i["ingredient_name"] + " (cleanded: " + i["cleaned_name"] + ") ...", end = ' ', flush=True)
 
         x = __match_ingredient(i, products, me)
 
@@ -157,6 +164,30 @@ def write_matched_ingredients_to_postgres(ingredients, products, cur):
         print("FINISHED " + str(round(100 * (current / length), 2)) + "%")
         current += 1
 
+def preprocess_ingredient_names(ingredients):
+    stop_words = ["ca.", "ohne", "TK", "evtl", "z.B.", "z. B.", "z. b.", "gehäuft", "EL"]
+    for i in ingredients:
+        i["cleaned_name"] = i["ingredient_name"]
+        for stop_word in stop_words:
+            # print("suche " + stop_word +" in " + i["cleaned_name"])
+            r = re.search(r".*" + re.escape(stop_word) + ".*", i["cleaned_name"])
+            if r: 
+                # print("Hab " + stop_word + " gefunden in " + i["ingredient_name"] + "!!!!!!!!!!!!!!!!!!!!")
+                i["cleaned_name"] = re.sub(r"" + re.escape(stop_word) + ".*", '', i["cleaned_name"])
+                # print("jetzt ist es " + i["cleaned_name"])
+    return ingredients
+
+def preprocess_product_names(products):
+    stop_words = ["ohne"]
+    for p in products:
+        p["cleaned_name"] = p["product_name"]
+        for stop_word in stop_words:
+            r = re.search(r".*" + re.escape(stop_word) + ".*", p["cleaned_name"])
+            if r: 
+                # print("Hab " + stop_word + " gefunden in " + p["product_name"] + "!!!!!!!!!!!!!!!!!!!!")
+                p["cleaned_name"] = re.sub(r"" + re.escape(stop_word) + ".*", '', p["cleaned_name"])
+                # print("jetzt ist es " + p["cleaned_name"])
+    return products
 
 if __name__ == '__main__':
     ingredients = None
@@ -166,7 +197,9 @@ if __name__ == '__main__':
 
     if USE_JSON_FILES_INSTEAD_OF_POSTGRES:
         ingredients = read_ingredient_names_from_json_file()
+        ingredients = preprocess_ingredient_names(ingredients)
         products = read_product_names_from_json_file()
+        products = preprocess_product_names(products)
 
         start = time.time()
         write_matched_ingredients_to_file(ingredients, products)
@@ -181,7 +214,9 @@ if __name__ == '__main__':
             create_tables(cur)
 
             ingredients = get_ingredients_array_from_postgres(cur)
+            ingredients = preprocess_ingredient_names(ingredients)
             products = get_products_array_from_postgres(cur)
+            products = preprocess_product_names(products)
 
             start = time.time()
             write_matched_ingredients_to_postgres(ingredients, products, cur)

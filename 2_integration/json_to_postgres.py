@@ -30,9 +30,9 @@ def read_ingredient_mappings_from_file_and_insert_to_postgres(cur):
 
     print('Inserting ' + str(len(json_array)) + ' mappings into PostgreSQL ...', end = ' ', flush=True)
     cur.executemany(""" INSERT INTO ingredients_with_rewe_products 
-                        (ingredient_name, ingredient_unit, product_name, product_unit, similarity, first_token_similarity) values 
-                        (%(ingredient_name)s, %(ingredient_unit)s, %(product_name)s, %(product_unit)s, %(similarity)s, %(first_token_similarity)s);
-                    """, json_array)
+                    (ingredient_name, ingredient_cleaned_name, ingredient_unit, product_name, product_cleaned_name, product_unit, similarity, first_token_similarity) values 
+                    (%(ingredient_name)s, %(ingredient_cleaned_name)s, %(ingredient_unit)s, %(product_name)s, %(product_cleaned_name)s, %(product_unit)s, %(similarity)s, %(first_token_similarity)s);
+                """, json_array)
     print('FINISHED')
 
 
