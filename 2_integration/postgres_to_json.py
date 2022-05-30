@@ -41,7 +41,7 @@ def write_product_names_to_json_file(cur):
     print("FINISHED")
 
 def write_ingredient_names_to_json_file(cur):
-    cur.execute("select distinct ingredient_name, unit from ingredients limit 3;")
+    cur.execute("select distinct ingredient_name, unit from ingredients;")
     ingredients = cur.fetchall()
     print("Writing " + str(len(ingredients)) + " ingredients of postgres to file ...", end = ' ', flush=True)
     ingredients = map(lambda ingredient: {"ingredient_name" : ingredient[0], "ingredient_unit" : ingredient[1]}, ingredients)

@@ -10,8 +10,13 @@ from model import *
 
 # Setzte diesen Wert auf True, falls keine Postgres Anbindung besteht, 
 # dann werden die angegebenen JSON Dateien aus postgres_to_json.py benutzt
-USE_JSON_FILES_INSTEAD_OF_POSTGRES = False
+USE_JSON_FILES_INSTEAD_OF_POSTGRES = True
 COMPARE_UNITS = True
+
+# Die Anzahl der Tupel, die in der Queue beim Matching gehalten werden, 
+# beim Vergleich mit dem ersten Token.
+NUMBER_OF_PRODUCTS_IN_PPRIORITY_QUEUE = 20
+THESHOLD_FOR_MAX_SIM = 0.05
 
 def connect():
     return psycopg2.connect(**config())
@@ -114,7 +119,7 @@ def get_best_matching_product(ingredient, products, monge_elkan):
 
 def __match_ingredient(ingredient, products, me):
     x = {}
-    product_candidates = get_best_matching_products_with_first_token(ingredient, products, me, 10, 0.05)
+    product_candidates = get_best_matching_products_with_first_token(ingredient, products, me, NUMBER_OF_PRODUCTS_IN_PPRIORITY_QUEUE, THESHOLD_FOR_MAX_SIM)
     matching_product = get_best_matching_product(ingredient, product_candidates, me)
 
     x["ingredient_name"] = ingredient["ingredient_name"]
@@ -165,27 +170,27 @@ def write_matched_ingredients_to_postgres(ingredients, products, cur):
         current += 1
 
 def preprocess_ingredient_names(ingredients):
-    stop_words = ["ca.", "ohne", "TK", "evtl", "z.B.", "z. B.", "z. b.", "gehäuft", "EL"]
+    stop_words = [r"ca.", r"(?<=[^a-zA-Z])ohne", r"TK", r"(?<=[^a-zA-Z])evtl", r"z.B.", r"z. B.", r"z. b.", r"gehäuft", r"EL"]
     for i in ingredients:
         i["cleaned_name"] = i["ingredient_name"]
         for stop_word in stop_words:
             # print("suche " + stop_word +" in " + i["cleaned_name"])
-            r = re.search(r".*" + re.escape(stop_word) + ".*", i["cleaned_name"])
+            r = re.search(stop_word + ".*", i["cleaned_name"])
             if r: 
                 # print("Hab " + stop_word + " gefunden in " + i["ingredient_name"] + "!!!!!!!!!!!!!!!!!!!!")
-                i["cleaned_name"] = re.sub(r"" + re.escape(stop_word) + ".*", '', i["cleaned_name"])
+                i["cleaned_name"] = re.sub(stop_word + ".*", '', i["cleaned_name"])
                 # print("jetzt ist es " + i["cleaned_name"])
     return ingredients
 
 def preprocess_product_names(products):
-    stop_words = ["ohne"]
+    stop_words = [r"(?<=[^a-zA-Z])ohne"]
     for p in products:
         p["cleaned_name"] = p["product_name"]
         for stop_word in stop_words:
-            r = re.search(r".*" + re.escape(stop_word) + ".*", p["cleaned_name"])
+            r = re.search(stop_word + ".*", p["cleaned_name"])
             if r: 
                 # print("Hab " + stop_word + " gefunden in " + p["product_name"] + "!!!!!!!!!!!!!!!!!!!!")
-                p["cleaned_name"] = re.sub(r"" + re.escape(stop_word) + ".*", '', p["cleaned_name"])
+                p["cleaned_name"] = re.sub(stop_word + ".*", '', p["cleaned_name"])
                 # print("jetzt ist es " + p["cleaned_name"])
     return products
 
