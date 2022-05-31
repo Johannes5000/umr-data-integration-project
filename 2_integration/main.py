@@ -170,7 +170,14 @@ def write_matched_ingredients_to_postgres(ingredients, products, cur):
         current += 1
 
 def preprocess_ingredient_names(ingredients):
-    stop_words = [r"ca.", r"(?<=[^a-zA-Z])ohne", r"TK", r"(?<=[^a-zA-Z])evtl", r"z.B.", r"z. B.", r"z. b.", r"gehäuft", r"EL"]
+    stop_words = [r"(?<=[^a-zA-Z])ca\.", r"(?<=[^a-zA-Z])ohne", 
+        r"TK", r"(?<=[^a-zA-Z])evtl", r"z\.\s?[bB]\.", r"gehäuft", 
+        r"EL", r"(?<=[^a-zA-Z])für", r"(?<=[^a-zA-Z])zum", 
+        r"(?<=[^a-zA-Z])mind?\.?", r"(?<=[^a-zA-Z])[Bb]edarf",
+        r"(?<=[^a-zA-Z])oder", r"(?<=[^a-zA-Z])[Aa]lternativ",
+        r"(?<=[^a-zA-Z])ich(?=[^a-zA-Z])", r"(?<=[^a-zA-Z])bei Bedarf", 
+        r"(?<=[^a-zA-Z])n\.\s?[bB]\.", r"(?<=[^a-zA-Z])gerne mehr"
+    ]
     for i in ingredients:
         i["cleaned_name"] = i["ingredient_name"]
         for stop_word in stop_words:
@@ -183,7 +190,7 @@ def preprocess_ingredient_names(ingredients):
     return ingredients
 
 def preprocess_product_names(products):
-    stop_words = [r"(?<=[^a-zA-Z])ohne"]
+    stop_words = [r"(?<=[^a-zA-Z])ohne", r"(?<=[^a-zA-Z])mit", r"(?<=[^a-zA-Z])weniger"]
     for p in products:
         p["cleaned_name"] = p["product_name"]
         for stop_word in stop_words:
