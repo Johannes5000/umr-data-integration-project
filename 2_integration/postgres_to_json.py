@@ -1,6 +1,8 @@
 
 # Diese Funktionen sind ausschließlich dazu gedacht, 
-# die Funktion des Programms ohne aktive PostgreSQL anbindung zu gewährleisten.
+# die Funktion des Programms ohne aktive PostgreSQL anbindung zu gewährleisten, 
+# bzw. damit man mit den hiermit exportierten Daten die Integration separat 
+# ohne Datenbank ausführen kann.
 
 
 import json

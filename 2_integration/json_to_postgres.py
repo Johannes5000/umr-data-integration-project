@@ -1,6 +1,8 @@
 
 # Diese Funktionen sind ausschließlich dazu gedacht, 
-# die Funktion des Programms ohne aktive PostgreSQL anbindung zu gewährleisten.
+# die Integration ohne aktive PostgreSQL Anbindung zu gewährleisten,
+# bzw. die bereits integrierten Daten aus der Datei `ingredients_products_mapping.json` 
+# in die Datenbank zu importieren
 
 
 import json
