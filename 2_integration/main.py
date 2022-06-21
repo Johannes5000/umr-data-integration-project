@@ -170,13 +170,17 @@ def write_matched_ingredients_to_postgres(ingredients, products, cur):
         current += 1
 
 def preprocess_ingredient_names(ingredients):
-    stop_words = [r"(?<=[^a-zA-Z])ca\.", r"(?<=[^a-zA-Z])ohne", 
+    stop_words = [r"(?<=[^a-zA-Z])ca\.?", r"(?<=[^a-zA-Z])ohne", 
         r"TK", r"(?<=[^a-zA-Z])evtl", r"z\.\s?[bB]\.", r"gehäuft", 
         r"EL", r"(?<=[^a-zA-Z])für", r"(?<=[^a-zA-Z])zum", 
         r"(?<=[^a-zA-Z])mind?\.?", r"(?<=[^a-zA-Z])[Bb]edarf",
         r"(?<=[^a-zA-Z])oder", r"(?<=[^a-zA-Z])[Aa]lternativ",
         r"(?<=[^a-zA-Z])ich(?=[^a-zA-Z])", r"(?<=[^a-zA-Z])bei Bedarf", 
-        r"(?<=[^a-zA-Z])n\.\s?[bB]\.", r"(?<=[^a-zA-Z])gerne mehr"
+        r"(?<=[^a-zA-Z])n\.\s?[bB]\.", r"(?<=[^a-zA-Z])gerne[^a-zA-Z]",
+        r"(?<=[^a-zA-Z])\d", r"(?<=[^a-zA-Z])à", r"(?<=[^a-zA-Z])je[^a-zA-Z]",
+        r"(?<=[^a-zA-Z])etwa[^a-zA-Z]", r"(?<=[^a-zA-Z])geschält",
+        r"(?<=[^a-zA-Z])in[^a-zA-Z]", r"(?<=[^a-zA-Z])gekocht[^a-zA-Z]",
+        r"(?<=[^a-zA-Z])etwa[^a-zA-Z]"
     ]
     for i in ingredients:
         i["cleaned_name"] = i["ingredient_name"]
@@ -187,6 +191,10 @@ def preprocess_ingredient_names(ingredients):
                 # print("Hab " + stop_word + " gefunden in " + i["ingredient_name"] + "!!!!!!!!!!!!!!!!!!!!")
                 i["cleaned_name"] = re.sub(stop_word + ".*", '', i["cleaned_name"])
                 # print("jetzt ist es " + i["cleaned_name"])
+            # Klammern entfernen
+            i["cleaned_name"] = re.sub(r"\(.+\)", '', i["cleaned_name"])
+            # "und" entfernen, da unnötig beim matchen
+            i["cleaned_name"] = re.sub(r"(?<=[^a-zA-Z])und(?=[^a-zA-Z])", '', i["cleaned_name"])
     return ingredients
 
 def preprocess_product_names(products):
