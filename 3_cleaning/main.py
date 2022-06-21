@@ -2,6 +2,7 @@ import psycopg2
 from config import config
 
 SQL_CREATE_TABLES_FILEPATH = '3_cleaning\\sql\\01_create_tables.sql'
+SQL_FILL_TABLES_FILEPATH = '3_cleaning\\sql\\02_fill_static_tables.sql'
 
 def get_file_content_as_string(filepath):
     with open(filepath, 'r', encoding='utf-8') as file:
@@ -16,6 +17,9 @@ def connect():
         # Tabellen erstellen
         print('Creating Tables ...', end = ' ', flush=True)
         cur.execute(get_file_content_as_string(SQL_CREATE_TABLES_FILEPATH))
+        print('FINISHED')
+        print('Filling Tables ...', end = ' ', flush=True)
+        cur.execute(get_file_content_as_string(SQL_FILL_TABLES_FILEPATH))
         print('FINISHED')
 
         cur.close()
