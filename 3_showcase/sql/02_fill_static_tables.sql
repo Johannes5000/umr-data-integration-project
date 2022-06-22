@@ -18,3 +18,7 @@ insert into convert_volume_to_l values
     ('gr. Gläser', 0.25), ('Glas', 0.2), ('kl. Glas', 0.15), ('gr. Glas', 0.25), ('dl', 0.1),
     ('Tasse/n', 0.2), ('Becher', 0.15), ('Tasse', 0.2), ('Schälchen', 0.25), ('TL', 0.0049),
     ('EL', 0.0148), ('Spritzer', 0.001);
+
+insert into units_to_ignore values
+    ('Prisen'), ('Prise'), ('Prise(n)'), ('Körner'), ('n. B.'), ('evtl.'), ('etwas'),
+    ('wenig'), ('Spritzer'), ('Msp.');

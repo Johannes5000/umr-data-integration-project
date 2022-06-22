@@ -35,10 +35,3 @@ create or replace view view_renamed_ingredients as (
         comment as ingredient_comment
     from ingredients
 );
-
-create or replace view view_integrated_data as (
-    select I.*, P.*, similarity, first_token_similarity
-    from view_renamed_products P
-        natural join ingredients_with_rewe_products M
-        natural join view_renamed_ingredients I
-);
