@@ -11,12 +11,12 @@ insert into piece_units values
     ('m.-großer'), ('m.-großes'), ('m.-große'), ('kleine'), ('kleiner'), ('kleines'), ('halbe');
 
 insert into convert_mass_to_kg values
-    ('mg', 0.000001), ('kg', 1), ('g', 0.001);
+    ('mg', 0.000001), ('kg', 1), ('KG', 1), ('g', 0.001), ('G', 0.001);
 
 insert into convert_volume_to_l values
-    ('Liter', 1), ('cl', 0.01 ), ('l', 1), ('ml', 0.001), ('Gläser', 0.2), ('Schuss', 0.001),
-    ('gr. Gläser', 0.25), ('Glas', 0.2), ('kl. Glas', 0.15), ('gr. Glas', 0.25), ('dl', 0.1),
-    ('Tasse/n', 0.2), ('Becher', 0.15), ('Tasse', 0.2), ('Schälchen', 0.25), ('TL', 0.0049),
+    ('Liter', 1), ('cl', 0.01 ), ('l', 1), ('L', 1), ('ml', 0.001), ('ML', 0.001), ('Gläser', 0.2),
+    ('Schuss', 0.001), ('gr. Gläser', 0.25), ('Glas', 0.2), ('kl. Glas', 0.15), ('gr. Glas', 0.25),
+    ('dl', 0.1), ('Tasse/n', 0.2), ('Becher', 0.15), ('Tasse', 0.2), ('Schälchen', 0.25), ('TL', 0.0049),
     ('EL', 0.0148), ('Spritzer', 0.001);
 
 insert into units_to_ignore values
