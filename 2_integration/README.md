@@ -36,10 +36,3 @@ Die Ergebnisse werden in den folgenden Pfaden abgespeichert.
 1.  Speichere die Ergebnisdatei unter dem Pfad `2_integration\ingredients_products_mapping.json` ab. 
 2.  Erstelle auf oberster Ebene eine Datei `database.ini`, falls diese noch nicht existiert. Diese soll entsprechend der Vorlage die Hostadresse (und Port, falls dieser vom Standart 5432 abweicht), die Datenbank, Nutzer und Passwort beinhalten.
 3.  Führe die Datei `2_integration\json_to_postgres.py` aus.
-
-## Ergebnisse in PostgreSQL anzeigen lassen
-Das gefundene Mapping kann mit dem SQL Befehl 
-```sql
-select * from view_integrated_data;
-```
-angezeigt werden.
